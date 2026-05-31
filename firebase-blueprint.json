@@ -1,0 +1,79 @@
+{
+  "entities": {
+    "Employee": {
+      "title": "Employee",
+      "description": "An employee card registered in the HRMS system",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Employee document unique identifier" },
+        "name": { "type": "string", "description": "Full name of employee" },
+        "nationalId": { "type": "string", "description": "Egyptian 14-digit National ID" },
+        "position": { "type": "string", "description": "Professional position or title" },
+        "department": { "type": "string", "description": "Department name" },
+        "projectSite": { "type": "string", "description": "Primary deployed project site name" },
+        "hireDate": { "type": "string", "format": "date", "description": "Hiring date in YYYY-MM-DD pattern" },
+        "salary": { "type": "number", "description": "Current monthly salary" },
+        "contractType": { "type": "string", "enum": ["Full-time", "Part-time", "Contract", "Daily"] },
+        "phone": { "type": "string", "description": "Egyptian contact number" },
+        "avatar": { "type": "string", "description": "Base64 string or profile avatar URL" },
+        "status": { "type": "string", "enum": ["active", "suspended"] },
+        "documents": {
+          "type": "array",
+          "description": "Scanned document metadata proofs uploaded for this worker"
+        }
+      },
+      "required": ["id", "name", "nationalId", "position", "department", "projectSite", "hireDate", "salary", "contractType", "phone", "status"]
+    },
+    "AttendanceRecord": {
+      "title": "AttendanceRecord",
+      "description": "Daily attendance punch check-in and out timestamps",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Attendance record unique ID" },
+        "employeeId": { "type": "string", "description": "Target employee identifier" },
+        "employeeName": { "type": "string", "description": "Name of the target employee" },
+        "date": { "type": "string", "format": "date", "description": "Date of punch in YYYY-MM-DD pattern" },
+        "checkIn": { "type": "string", "description": "HH:mm punch-in timestamp" },
+        "checkOut": { "type": "string", "description": "HH:mm punch-out timestamp" },
+        "status": { "type": "string", "enum": ["present", "absent", "late", "early_leave", "overtime"] },
+        "hoursWorked": { "type": "number", "description": "Calculated working duration in hours" },
+        "overtimeHours": { "type": "number", "description": "Calculated extra-work overtime session duration" },
+        "delayMinutes": { "type": "number", "description": "Number of tardy delay minutes" },
+        "earlyLeaveMinutes": { "type": "number", "description": "Minutes checked out ahead of official shift closure" },
+        "method": { "type": "string", "enum": ["fingerprint", "ocr", "gps", "manual"] },
+        "selfieUrl": { "type": "string", "description": "Optional facial proof URL for mobile geofenced logging" },
+        "gpsLocation": { "type": "object", "description": "Optional location telemetry of mobile punch event" }
+      },
+      "required": ["id", "employeeId", "employeeName", "date", "checkIn", "checkOut", "status", "hoursWorked", "overtimeHours", "delayMinutes", "earlyLeaveMinutes", "method"]
+    },
+    "DailyLaborWorker": {
+      "title": "DailyLaborWorker",
+      "description": "An active third-party daily payroll field worker",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Daily field laborer ID" },
+        "name": { "type": "string", "description": "Full legal name" },
+        "phone": { "type": "string", "description": "Mobile contact coordinate" },
+        "siteName": { "type": "string", "description": "Site location deploying the worker" },
+        "dailyRate": { "type": "number", "description": "Paid per active task day" },
+        "activeDays": { "type": "array", "description": "Days worked in current billing cycle" },
+        "totalPaid": { "type": "number", "description": "Total payment disbursed in EGP" }
+      },
+      "required": ["id", "name", "phone", "siteName", "dailyRate", "activeDays", "totalPaid"]
+    }
+  },
+  "firestore": {
+    "/employees/{employeeId}": {
+      "schema": "Employee",
+      "description": "Global register of internal human resources"
+    },
+    "/attendance/{attendanceId}": {
+      "schema": "AttendanceRecord",
+      "description": "Audit trail log of daily workforce attendance punch registers"
+    },
+    "/dailyLabor/{laborId}": {
+      "schema": "DailyLaborWorker",
+      "description": "List of active daily-wage field contractors and cumulative earnings"
+    }
+  }
+}

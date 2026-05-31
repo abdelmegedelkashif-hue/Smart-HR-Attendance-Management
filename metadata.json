@@ -1,0 +1,6 @@
+{
+  "name": "Smart HR & Attendance Management",
+  "description": "An executive Smart HR & Attendance Management System featuring biometric log processing, AI-powered OCR attendance sheet extraction, geofenced GPS verification with selfie audits, and daily wage labour dashboards.",
+  "requestFramePermissions": ["camera", "geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

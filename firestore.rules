@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Reusable global helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // --- Entity Specific Validation Helpers ---
+
+    function isValidEmployee(data) {
+      return data.keys().hasAll(['id', 'name', 'nationalId', 'position', 'department', 'projectSite', 'hireDate', 'salary', 'contractType', 'phone', 'status'])
+        && data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 200
+        && data.nationalId is string && data.nationalId.size() == 14
+        && data.position is string && data.position.size() <= 100
+        && data.department is string && data.department.size() <= 100
+        && data.projectSite is string && data.projectSite.size() <= 200
+        && data.hireDate is string && data.hireDate.size() == 10
+        && data.salary is number && data.salary >= 0
+        && data.contractType is string && (data.contractType == 'Full-time' || data.contractType == 'Part-time' || data.contractType == 'Contract' || data.contractType == 'Daily')
+        && data.phone is string && data.phone.size() <= 20
+        && data.status is string && (data.status == 'active' || data.status == 'suspended');
+    }
+
+    function isValidAttendanceRecord(data) {
+      return data.keys().hasAll(['id', 'employeeId', 'employeeName', 'date', 'checkIn', 'checkOut', 'status', 'hoursWorked', 'overtimeHours', 'delayMinutes', 'earlyLeaveMinutes', 'method'])
+        && data.id is string && data.id.size() <= 128
+        && data.employeeId is string && data.employeeId.size() <= 128
+        && data.employeeName is string && data.employeeName.size() <= 200
+        && data.date is string && data.date.size() == 10
+        && data.checkIn is string && data.checkIn.size() <= 5
+        && data.checkOut is string && data.checkOut.size() <= 5
+        && data.status is string && (data.status == 'present' || data.status == 'absent' || data.status == 'late' || data.status == 'early_leave' || data.status == 'overtime')
+        && data.hoursWorked is number && data.hoursWorked >= 0
+        && data.overtimeHours is number && data.overtimeHours >= 0
+        && data.delayMinutes is number && data.delayMinutes >= 0
+        && data.earlyLeaveMinutes is number && data.earlyLeaveMinutes >= 0
+        && data.method is string && (data.method == 'fingerprint' || data.method == 'ocr' || data.method == 'gps' || data.method == 'manual');
+    }
+
+    function isValidDailyLaborWorker(data) {
+      return data.keys().hasAll(['id', 'name', 'phone', 'siteName', 'dailyRate', 'activeDays', 'totalPaid'])
+        && data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 200
+        && data.phone is string && data.phone.size() <= 20
+        && data.siteName is string && data.siteName.size() <= 200
+        && data.dailyRate is number && data.dailyRate >= 0
+        && data.activeDays is list
+        && data.totalPaid is number && data.totalPaid >= 0;
+    }
+
+    // --- Collections matching rules ---
+
+    match /employees/{employeeId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(employeeId) && isValidEmployee(incoming()) && incoming().keys().size() <= 15;
+      allow update: if isSignedIn() && isValidId(employeeId) && isValidEmployee(incoming()) && incoming().id == existing().id && incoming().keys().size() <= 15;
+      allow delete: if isSignedIn() && isValidId(employeeId);
+    }
+
+    match /attendance/{attendanceId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(attendanceId) && isValidAttendanceRecord(incoming()) && incoming().keys().size() <= 15;
+      allow update: if isSignedIn() && isValidId(attendanceId) && isValidAttendanceRecord(incoming()) && incoming().id == existing().id && incoming().keys().size() <= 15;
+      allow delete: if isSignedIn() && isValidId(attendanceId);
+    }
+
+    match /dailyLabor/{laborId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(laborId) && isValidDailyLaborWorker(incoming()) && incoming().keys().size() <= 10;
+      allow update: if isSignedIn() && isValidId(laborId) && isValidDailyLaborWorker(incoming()) && incoming().id == existing().id && incoming().keys().size() <= 10;
+      allow delete: if isSignedIn() && isValidId(laborId);
+    }
+  }
+}
