@@ -1,3 +1,4 @@
+import rateLimit from 'express-rate-limit';
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -251,6 +252,16 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     // Serve client static files from 'dist' folder
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 دقيقة
+  max: 100, // حد أقصى 100 طلب من نفس الآي بي
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// تطبيق الحماية على السيرفر
+app.use(limiter);
     const distPath = path.resolve(__dirname, 'dist');
     if (fs.existsSync(distPath)) {
       app.use(express.static(distPath));
