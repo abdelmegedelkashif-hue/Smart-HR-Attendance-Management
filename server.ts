@@ -261,17 +261,14 @@ const limiter = rateLimit({
 });
 
 // تطبيق الحماية على السيرفر
-app.use(limiter);
-    const distPath = path.resolve(__dirname, 'dist');
-    if (fs.existsSync(distPath)) {
-      app.use(express.static(distPath));
-      app.get('*', (req, res) => {
-        res.sendFile(path.resolve(distPath, 'index.html'));
-      });
-    } else {
-      console.warn("⚠️ Production mode active, but 'dist' folder does not exist yet. Please compile using 'npm run build' first.");
-    }
-  }
+        if (fs.existsSync(distPath)) {
+            app.use(express.static(distPath));
+            
+            // بنحط الـ limiter هنا كـ Middleware عشان يحمي الـ Route ده بالظبط
+            app.get('*', limiter, (req, res) => {
+                res.sendFile(path.resolve(distPath, 'index.html'));
+            });
+        }
 
   // Bind to port 3000 as strictly demanded by platform reverse proxy
   app.listen(3000, '0.0.0.0', () => {
